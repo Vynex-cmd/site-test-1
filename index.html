@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>handle</title>
+<meta name="theme-color" content="#07060a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&family=Cinzel:wght@600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07060a;
+    --bg-alt:rgba(22,17,28,0.40);
+    --ink:#f1ebf5;
+    --ink-dim:#a89eb3;
+    --ink-faint:#5e5468;
+    --crimson:#e23a5d;
+    --violet:#8a3ffc;
+    --cyan:#4fd8ff;
+    --line:rgba(255,255,255,0.08);
+    --radius:14px;
+    --angle:0deg;
+  }
+
+  @property --angle{
+    syntax:'<angle>';
+    inherits:false;
+    initial-value:0deg;
+  }
+
+  *{box-sizing:border-box;}
+
+  html{ scrollbar-color: var(--ink-faint) var(--bg); }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    color:var(--ink);
+    font-family:'JetBrains Mono', monospace;
+    overflow-x:hidden;
+    background:var(--bg);
+  }
+
+  /* ---------- background layer ---------- */
+  .bg-layer{
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    background-color:var(--bg);
+    background-image:
+      radial-gradient(ellipse 70% 45% at 18% -5%, rgba(138,63,252,0.28), transparent 60%),
+      radial-gradient(ellipse 70% 45% at 85% 110%, rgba(226,58,93,0.26), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(79,216,255,0.05), transparent 70%);
+  }
+  .bg-layer.has-image{
+    background-image:
+      linear-gradient(180deg, rgba(7,6,10,0.78), rgba(7,6,10,0.92)),
+      var(--user-bg);
+    background-size:cover;
+    background-position:center;
+    animation:kenburns 28s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns{
+    from{ transform:scale(1); }
+    to{ transform:scale(1.06); }
+  }
+  .grain{
+    position:fixed; inset:0; z-index:-1;
+    opacity:0.04; pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* ---------- gate / click-to-enter ---------- */
+  #gate{
+    position:fixed; inset:0; z-index:50;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px;
+    background:radial-gradient(ellipse 60% 50% at 50% 40%, rgba(138,63,252,0.18), transparent 65%), var(--bg);
+    cursor:pointer;
+    transition:opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #gate.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  #gate .gate-mark{
+    font-family:'UnifrakturCook', serif;
+    font-size:64px;
+    color:var(--crimson);
+    text-shadow:0 0 30px rgba(226,58,93,0.5);
+    opacity:0;
+    animation:fadeUp 0.9s ease forwards 0.1s;
+  }
+  #gate .gate-name{
+    font-family:'Cinzel', serif;
+    font-size:13px;
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    opacity:0;
+    animation:fadeUp 0.9s ease forwards 0.4s;
+  }
+  #gate .gate-prompt{
+    margin-top:10px;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    opacity:0;
+    animation:fadeUp 0.9s ease forwards 0.75s, blink 2s ease-in-out infinite 1.8s;
+  }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(14px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  @keyframes blink{
+    0%,100%{ opacity:0.9; } 50%{ opacity:0.3; }
+  }
+
+  /* ---------- shell ---------- */
+  #shell{
+    display:flex; align-items:center; justify-content:center;
+    padding:48px 20px 90px;
+    min-height:100vh;
+    opacity:0;
+    transform:translateY(8px);
+  }
+  #shell.revealed{
+    animation:fadeUp 0.7s cubic-bezier(.22,.61,.36,1) forwards;
+  }
+
+  .page{
+    width:100%; max-width:420px;
+    display:flex; flex-direction:column; align-items:center; gap:26px;
+  }
+
+  /* ---------- identity / pfp ---------- */
+  .avatar-wrap{
+    position:relative;
+    width:132px; height:132px;
+    filter:drop-shadow(0 0 24px rgba(226,58,93,0.35)) drop-shadow(0 0 44px rgba(138,63,252,0.25));
+  }
+  .avatar-ring{
+    position:absolute; inset:-5px;
+    border-radius:50%;
+    background:conic-gradient(from var(--angle), var(--crimson), var(--violet), var(--cyan), var(--crimson));
+    animation:spin 5s linear infinite;
+    filter:blur(0.3px);
+    box-shadow:0 0 30px rgba(226,58,93,0.4), 0 0 60px rgba(138,63,252,0.25);
+  }
+  @keyframes spin{ to{ --angle:360deg; } }
+  .avatar{
+    position:absolute; inset:4px;
+    border-radius:50%;
+    overflow:hidden;
+    background:linear-gradient(135deg, var(--violet), #2a1135);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel', serif;
+    font-size:38px; font-weight:700;
+    color:var(--ink);
+  }
+  .avatar img{ width:100%; height:100%; object-fit:cover; }
+
+  .identity{ text-align:center; display:flex; flex-direction:column; gap:6px; }
+  .handle{
+    font-family:'UnifrakturCook', serif;
+    font-size:30px;
+    color:var(--ink);
+    text-shadow:0 0 18px rgba(226,58,93,0.55), 0 0 40px rgba(138,63,252,0.3);
+  }
+  .tagline{ font-size:11.5px; color:var(--ink-dim); letter-spacing:0.03em; }
+
+  .badges-row{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+    margin-top:2px;
+  }
+  .badge{
+    display:flex; align-items:center; gap:0;
+    padding:6px;
+    border-radius:20px;
+    background:var(--bg-alt);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--line);
+    box-shadow:0 0 16px rgba(226,58,93,0.10), 0 0 28px rgba(138,63,252,0.08);
+    font-size:10.5px;
+    letter-spacing:0.02em;
+    color:var(--ink-dim);
+    opacity:0;
+    transform:translateY(6px);
+    animation:fadeUp 0.5s cubic-bezier(.22,.61,.36,1) forwards;
+    transition:border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease, padding 0.3s cubic-bezier(.22,.61,.36,1), gap 0.3s cubic-bezier(.22,.61,.36,1);
+  }
+  .badge:hover, .badge:focus-visible{
+    border-color:rgba(226,58,93,0.4);
+    color:var(--ink);
+    box-shadow:0 0 22px rgba(226,58,93,0.22), 0 0 36px rgba(138,63,252,0.16);
+    padding:6px 12px 6px 6px;
+    gap:6px;
+    outline:none;
+  }
+  .badge-icon{
+    width:16px; height:16px; border-radius:50%; flex-shrink:0;
+    object-fit:cover;
+    background:linear-gradient(135deg, var(--violet), #2a1135);
+  }
+  .badge-icon.fallback{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel', serif; font-size:8px; font-weight:700; color:var(--ink);
+  }
+  .badge-label{
+    display:inline-block;
+    max-width:0;
+    overflow:hidden;
+    white-space:nowrap;
+    opacity:0;
+    transition:max-width 0.3s cubic-bezier(.22,.61,.36,1), opacity 0.2s ease;
+  }
+  .badge:hover .badge-label,
+  .badge:focus-visible .badge-label{
+    max-width:140px;
+    opacity:1;
+  }
+
+  /* ---------- links row ---------- */
+  .links-row{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:10px;
+    margin-top:4px;
+    width:100%;
+  }
+  .link-pill{
+    all:unset;
+    display:flex; align-items:center; gap:8px;
+    padding:9px 16px 9px 10px;
+    border-radius:24px;
+    background:var(--bg-alt);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border:1px solid var(--line);
+    box-shadow:0 0 18px rgba(226,58,93,0.10), 0 0 32px rgba(138,63,252,0.08);
+    font-size:12px;
+    letter-spacing:0.02em;
+    color:var(--ink);
+    cursor:pointer;
+    opacity:0;
+    transform:translateY(6px);
+    animation:fadeUp 0.5s cubic-bezier(.22,.61,.36,1) forwards;
+    transition:border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .link-pill:hover, .link-pill:focus-visible{
+    border-color:rgba(226,58,93,0.45);
+    box-shadow:0 0 26px rgba(226,58,93,0.24), 0 0 44px rgba(138,63,252,0.18);
+    transform:translateY(-1px);
+    outline:none;
+  }
+  .link-pill:active{ transform:translateY(0) scale(0.98); }
+  .link-icon{
+    width:22px; height:22px; border-radius:50%; flex-shrink:0;
+    object-fit:cover;
+    background:linear-gradient(135deg, var(--violet), #2a1135);
+  }
+  .link-icon.fallback{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel', serif; font-size:10px; font-weight:700; color:var(--ink);
+  }
+
+  /* ---------- confirm modal ---------- */
+  #confirm-overlay{
+    position:fixed; inset:0; z-index:60;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(5,4,8,0.55);
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    opacity:0; visibility:hidden;
+    transition:opacity 0.25s ease, visibility 0.25s ease;
+    padding:20px;
+  }
+  #confirm-overlay.visible{ opacity:1; visibility:visible; }
+  .confirm-box{
+    width:100%; max-width:320px;
+    background:rgba(22,17,28,0.85);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(226,58,93,0.3);
+    border-radius:var(--radius);
+    padding:22px;
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    text-align:center;
+    box-shadow:0 0 40px rgba(226,58,93,0.18), 0 0 70px rgba(138,63,252,0.14);
+    transform:translateY(10px) scale(0.97);
+    transition:transform 0.25s cubic-bezier(.22,.61,.36,1);
+  }
+  #confirm-overlay.visible .confirm-box{ transform:translateY(0) scale(1); }
+  .confirm-title{
+    font-family:'Cinzel', serif;
+    font-size:13px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink);
+  }
+  .confirm-url{
+    font-size:11px; color:var(--ink-dim);
+    word-break:break-all;
+    max-width:100%;
+  }
+  .confirm-actions{ display:flex; gap:10px; width:100%; margin-top:4px; }
+  .confirm-btn{
+    all:unset; flex:1; text-align:center;
+    padding:9px 0; border-radius:20px;
+    font-size:11.5px; letter-spacing:0.04em; text-transform:uppercase;
+    cursor:pointer;
+    border:1px solid var(--line);
+    transition:border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+  }
+  .confirm-btn.cancel{ color:var(--ink-dim); }
+  .confirm-btn.cancel:hover{ color:var(--ink); border-color:rgba(255,255,255,0.2); }
+  .confirm-btn.go{
+    color:var(--ink);
+    background:linear-gradient(90deg, rgba(226,58,93,0.25), rgba(138,63,252,0.25));
+    border-color:rgba(226,58,93,0.4);
+  }
+  .confirm-btn.go:hover{
+    box-shadow:0 0 20px rgba(226,58,93,0.3), 0 0 32px rgba(138,63,252,0.22);
+  }
+
+  /* ---------- copy toast ---------- */
+  #toast{
+    position:fixed; left:50%; bottom:70px; z-index:60;
+    transform:translate(-50%, 10px);
+    background:rgba(22,17,28,0.85);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(226,58,93,0.35);
+    border-radius:24px;
+    padding:9px 18px;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    color:var(--ink);
+    box-shadow:0 0 26px rgba(226,58,93,0.2), 0 0 44px rgba(138,63,252,0.14);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+  }
+  #toast.visible{ opacity:1; transform:translate(-50%, 0); }
+
+  /* ---------- nav ---------- */
+  nav{ display:flex; gap:18px; font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; }
+  nav button{
+    all:unset; position:relative; color:var(--ink-dim); cursor:pointer; padding-bottom:4px;
+    transition:color 0.2s ease;
+  }
+  nav button::after{
+    content:""; position:absolute; left:0; bottom:0; width:0%; height:1.5px;
+    background:linear-gradient(90deg, var(--crimson), var(--violet));
+    transition:width 0.25s ease;
+  }
+  nav button:hover, nav button:focus-visible{ color:var(--ink); }
+  nav button:hover::after, nav button:focus-visible::after{ width:100%; }
+  nav button[aria-current="true"]{ color:var(--ink); }
+  nav button[aria-current="true"]::after{ width:100%; }
+  nav button:focus-visible{ outline:1px solid var(--crimson); outline-offset:3px; }
+
+  /* ---------- panels ---------- */
+  .panel-wrap{ width:100%; position:relative; min-height:130px; }
+  .panel{ width:100%; display:flex; flex-direction:column; gap:10px; }
+  .panel[hidden]{ display:none; }
+  .panel.enter{ animation:panelIn 0.45s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes panelIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+  .row{ opacity:0; transform:translateY(8px); animation:rowIn 0.4s cubic-bezier(.22,.61,.36,1) forwards; }
+  @keyframes rowIn{ to{ opacity:1; transform:translateY(0); } }
+
+  .card{
+    width:100%;
+    background:var(--bg-alt);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px;
+    position:relative;
+    overflow:hidden;
+    box-shadow:0 0 28px rgba(226,58,93,0.10), 0 0 48px rgba(138,63,252,0.08), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .card::before{
+    content:"";
+    position:absolute; top:0; left:-60%;
+    width:40%; height:100%;
+    background:linear-gradient(115deg, transparent, rgba(255,255,255,0.07), transparent);
+    transform:skewX(-20deg);
+    transition:left 0.6s ease;
+  }
+  a.card:hover::before, a.card:focus-visible::before{ left:130%; }
+  a.card{ text-decoration:none; color:inherit; display:block; transition:border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+  a.card:hover, a.card:focus-visible{
+    border-color:rgba(226,58,93,0.45);
+    transform:translateY(-1px);
+    outline:none;
+    box-shadow:0 0 32px rgba(226,58,93,0.22), 0 0 56px rgba(138,63,252,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* discord card */
+  .discord-card{ display:flex; align-items:center; gap:12px; }
+  .d-avatar{
+    width:46px; height:46px; border-radius:50%; flex-shrink:0; overflow:hidden;
+    background:linear-gradient(135deg, var(--violet), #2a1135);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel',serif; font-size:16px;
+    position:relative;
+  }
+  .d-avatar img{ width:100%; height:100%; object-fit:cover; }
+  .d-status-dot{
+    position:absolute; right:-1px; bottom:-1px;
+    width:13px; height:13px; border-radius:50%;
+    border:2.5px solid #16111c;
+    background:#747f8d;
+  }
+  .d-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .d-name-row{ display:flex; align-items:baseline; gap:6px; }
+  .d-username{ font-size:13px; color:var(--ink); }
+  .d-tag{ font-size:10.5px; color:var(--ink-faint); }
+  .d-status-text{ font-size:10.5px; color:var(--ink-dim); }
+  .d-badges{ display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+  .d-badge{
+    font-size:9px; letter-spacing:0.03em; text-transform:uppercase;
+    padding:3px 7px; border-radius:20px;
+    border:1px solid rgba(255,255,255,0.12);
+    color:var(--ink-dim);
+    background:rgba(255,255,255,0.03);
+  }
+  .d-empty{ font-size:11px; color:var(--ink-faint); line-height:1.6; }
+
+  /* list rows */
+  .list-card{ padding:0; }
+  .list-card .item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:13px 16px; text-decoration:none; color:inherit;
+    border-bottom:1px solid var(--line);
+    transition:background 0.18s ease, padding-left 0.18s ease;
+  }
+  .list-card .item:last-child{ border-bottom:none; }
+  .list-card .item:hover, .list-card .item:focus-visible{
+    background:linear-gradient(90deg, rgba(226,58,93,0.08), rgba(138,63,252,0.05));
+    padding-left:20px; outline:none;
+  }
+  .item-text{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .item-title{ font-size:12.5px; color:var(--ink); }
+  .item-sub{ font-size:10.5px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .item-arrow{ flex-shrink:0; color:var(--ink-faint); transition:transform 0.18s ease, color 0.18s ease; }
+  .list-card .item:hover .item-arrow, .list-card .item:focus-visible .item-arrow{
+    transform:translate(2px,-2px); color:var(--crimson);
+  }
+
+  footer{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    color:var(--ink-faint); font-size:10.5px;
+  }
+  .counter-row{ display:flex; align-items:center; gap:6px; }
+  .counter{ color:var(--ink-dim); letter-spacing:0.05em; }
+  .info-btn{
+    width:14px; height:14px; border-radius:50%; border:1px solid var(--ink-faint);
+    color:var(--ink-faint); font-size:9px; display:flex; align-items:center; justify-content:center;
+    cursor:default; user-select:none;
+  }
+
+  /* ---------- volume control ---------- */
+  #volume-ctl{
+    position:fixed; bottom:18px; right:18px; z-index:30;
+    display:flex; align-items:center; gap:8px;
+    background:rgba(15,12,20,0.65);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--line);
+    border-radius:30px;
+    padding:8px 12px;
+  }
+  #vol-btn{
+    all:unset; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    width:18px; height:18px; color:var(--ink-dim); transition:color 0.2s ease;
+  }
+  #vol-btn:hover, #vol-btn:focus-visible{ color:var(--crimson); }
+  #vol-slider{
+    width:70px; accent-color:var(--crimson); cursor:pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    #gate .gate-mark, #gate .gate-name, #gate .gate-prompt{ animation:none; opacity:1; }
+    .bg-layer.has-image{ animation:none; }
+    .avatar-ring{ animation:none; }
+    .panel.enter, .row{ animation:none; opacity:1; transform:none; }
+    a.card:hover, a.card:focus-visible{ transform:none; }
+    #shell.revealed{ animation:none; opacity:1; transform:none; }
+  }
+
+  @media (max-width:380px){ .page{ gap:20px; } }
+</style>
+</head>
+<body>
+
+<div class="bg-layer" id="bg-layer"></div>
+<div class="grain"></div>
+
+<div id="gate" role="button" tabindex="0" aria-label="Click to enter">
+  <div class="gate-mark" aria-hidden="true">N</div>
+  <div class="gate-name" id="gate-name">gothless</div>
+  <div class="gate-prompt">click to enter</div>
+</div>
+
+<div id="shell">
+  <div class="page">
+
+    <div class="avatar-wrap">
+      <div class="avatar-ring" aria-hidden="true"></div>
+      <div class="avatar" id="avatar"></div>
+    </div>
+
+    <div class="identity">
+      <div class="handle" id="handle-text">your handle</div>
+      <div class="tagline" id="tagline-text">a one-line description of what you do</div>
+      <div class="badges-row" id="badges-row"></div>
+      <div class="links-row" id="links-row"></div>
+    </div>
+
+    <nav id="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="home" aria-current="true">home</button>
+      <button role="tab" data-tab="projects">projects</button>
+      <button role="tab" data-tab="biolinks">biolinks</button>
+      <button role="tab" data-tab="socials">socials</button>
+    </nav>
+
+    <div class="panel-wrap" id="panel-wrap">
+
+      <!-- HOME: live discord card -->
+      <div class="panel" data-panel="home">
+        <div class="card discord-card row" id="discord-card" style="animation-delay:.03s">
+          <div class="d-empty">add your Discord user ID in CONFIG to show a live status card here.</div>
+        </div>
+      </div>
+
+      <!-- PROJECTS -->
+      <div class="panel" data-panel="projects" hidden id="projects-panel"></div>
+
+      <!-- BIOLINKS -->
+      <div class="panel" data-panel="biolinks" hidden id="biolinks-panel"></div>
+
+      <!-- SOCIALS -->
+      <div class="panel" data-panel="socials" hidden id="socials-panel"></div>
+
+    </div>
+
+    <footer>
+      <div class="counter-row">
+        <span class="counter" id="counter">000000</span>
+        <span class="info-btn" title="visitor count">?</span>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+<audio id="bg-audio" loop preload="none"></audio>
+
+<div id="volume-ctl">
+  <button id="vol-btn" aria-label="mute">
+    <svg id="vol-icon" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+      <path d="M3 9v6h4l5 5V4L7 9H3z"/>
+      <path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z"/>
+    </svg>
+  </button>
+  <input type="range" id="vol-slider" min="0" max="100" value="40" aria-label="volume">
+</div>
+
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Leaving this site</div>
+    <div class="confirm-url" id="confirm-url">https://example.com</div>
+    <div class="confirm-actions">
+      <button class="confirm-btn cancel" id="confirm-cancel">Cancel</button>
+      <button class="confirm-btn go" id="confirm-go">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast">copied to clipboard</div>
+
+<script>
+  /* =========================================================
+     CONFIG — edit these to personalize the site
+     ========================================================= */
+  const CONFIG = {
+    USERNAME: "Gothless",
+    TAGLINE: "wsg, im gothless, retired editor of 5 years",
+
+    // These point at files inside this repo (see assets/ folder).
+    // Drop your own files in with the SAME filenames and they'll show
+    // up automatically. If a file is missing, that feature just falls
+    // back gracefully (initial letter / default gradient / silent volume).
+    PFP_URL: "assets/images/pfp.png",
+    BACKGROUND_IMAGE: "assets/images/background.jpg",
+    AUDIO_SRC: "assets/audio/background.mp3",
+
+    AUDIO_DEFAULT_VOLUME: 0.4,
+
+    // Up to however many you want — each shows as a small pill under your
+    // tagline. ICON points at a file in assets/images/badges/ (same rule
+    // as pfp/background: missing file just falls back to an initial).
+    BADGES: [
+      { icon: "assets/images/badges/badge1.png", label: "badge one" },
+      { icon: "assets/images/badges/badge2.png", label: "badge two" },
+      { icon: "assets/images/badges/badge3.png", label: "badge three" },
+    ],
+
+    // Bigger pills that sit below the badges. Give each one an optional
+    // icon (assets/images/links/...), a label, and a url.
+    // - If `url` is set: clicking asks "leave this site?" before opening it.
+    // - If `url` is left blank: clicking copies the label text to the
+    //   clipboard and shows a "copied" toast instead.
+    LINKS: [
+      { icon: "assets/images/links/link1.png", label: "telegram", url: "https://t.me/feds" },
+      { icon: "assets/images/links/link2.png", label: "btc wallet", url: "bc1qne5fx25j3zr96gwmupplyfl2vttfl8gfh4y93s" },
+      { icon: "assets/images/links/link3.png", label: "eth wallet", url: "0xd465b0a06f38984a05bed3255052d41bbb01c132" },
+    ],
+
+    // Each opens in a new tab when clicked — set `url` to the real
+    // destination. Card entries render top-to-bottom in this order.
+    PROJECTS: [
+      { title: "non atm", sub: "short description of what it does", url: "" },
+      { title: "non atm", sub: "short description of what it does", url: "" },
+      { title: "non atm", sub: "short description of what it does", url: "" },
+    ],
+    BIOLINKS: [
+      { title: "FakeCrime", sub: "https://fakecrime.bio/Gothless", url: "https://fakecrime.bio/Gothless" },
+      { title: "Clouds", sub: "https://clouds.bio/rot", url: "https://clouds.bio/rot" },
+      { title: "Frail", sub: "https://frail.lol/vx", url: "https://frail.lol/vx" },
+    ],
+    SOCIALS: [
+      { title: "twitter", sub: "soon", url: "https://example.com" },
+      { title: "insta", sub: "soon", url: "https://example.com" },
+      { title: "discord", sub: "gothless.exe", url: "https://discord.com/users/786539308826755120" },
+    ],
+
+    DISCORD_USER_ID: "786539308826755120"       // your Discord user ID, blank = card stays a placeholder
+                               // NOTE: Lanyard (the service powering this) only tracks
+                               // presence for accounts that have joined its Discord
+                               // server: https://discord.gg/lanyard
+  };
+
+  /* ---------- apply identity ---------- */
+  document.getElementById('gate-name').textContent = CONFIG.USERNAME;
+  document.getElementById('handle-text').textContent = CONFIG.USERNAME;
+  document.getElementById('tagline-text').textContent = CONFIG.TAGLINE;
+  document.title = CONFIG.USERNAME;
+
+  const avatarEl = document.getElementById('avatar');
+  function showInitial(){
+    avatarEl.innerHTML = '';
+    avatarEl.textContent = (CONFIG.USERNAME.trim()[0] || '?').toUpperCase();
+  }
+  if(CONFIG.PFP_URL){
+    const img = document.createElement('img');
+    img.alt = CONFIG.USERNAME;
+    img.onerror = showInitial; // file not added to assets/images/ yet — fall back
+    img.src = CONFIG.PFP_URL;
+    avatarEl.appendChild(img);
+  } else {
+    showInitial();
+  }
+
+  if(CONFIG.BACKGROUND_IMAGE){
+    const layer = document.getElementById('bg-layer');
+    const probe = new Image();
+    probe.onload = () => {
+      layer.style.setProperty('--user-bg', `url("${CONFIG.BACKGROUND_IMAGE}")`);
+      layer.classList.add('has-image');
+    };
+    // onerror: file not added to assets/images/ yet — keep default gradient
+    probe.src = CONFIG.BACKGROUND_IMAGE;
+  }
+
+  /* ---------- badges ---------- */
+  (function(){
+    const row = document.getElementById('badges-row');
+    if(!CONFIG.BADGES || !CONFIG.BADGES.length) return;
+
+    CONFIG.BADGES.forEach((badge, i) => {
+      const pill = document.createElement('span');
+      pill.className = 'badge';
+      pill.tabIndex = 0;
+      pill.style.animationDelay = `${0.5 + i * 0.08}s`;
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'badge-icon fallback';
+      iconWrap.textContent = (badge.label.trim()[0] || '?').toUpperCase();
+
+      if(badge.icon){
+        const img = new Image();
+        img.onload = () => {
+          const finalImg = document.createElement('img');
+          finalImg.className = 'badge-icon';
+          finalImg.src = badge.icon;
+          finalImg.alt = badge.label;
+          pill.replaceChild(finalImg, iconWrap);
+        };
+        // onerror: file not added to assets/images/badges/ yet — keep initial fallback
+        img.src = badge.icon;
+      }
+
+      const label = document.createElement('span');
+      label.className = 'badge-label';
+      label.textContent = badge.label;
+
+      pill.appendChild(iconWrap);
+      pill.appendChild(label);
+      row.appendChild(pill);
+    });
+  })();
+
+  /* ---------- links row ---------- */
+  (function(){
+    const row = document.getElementById('links-row');
+    if(!CONFIG.LINKS || !CONFIG.LINKS.length) return;
+
+    const overlay = document.getElementById('confirm-overlay');
+    const confirmUrl = document.getElementById('confirm-url');
+    const confirmGo = document.getElementById('confirm-go');
+    const confirmCancel = document.getElementById('confirm-cancel');
+    const toast = document.getElementById('toast');
+
+    let pendingUrl = null;
+    let toastTimer = null;
+
+    function openConfirm(url){
+      pendingUrl = url;
+      confirmUrl.textContent = url;
+      overlay.classList.add('visible');
+    }
+    function closeConfirm(){
+      overlay.classList.remove('visible');
+      pendingUrl = null;
+    }
+    confirmCancel.addEventListener('click', closeConfirm);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeConfirm(); });
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && overlay.classList.contains('visible')) closeConfirm();
+    });
+    confirmGo.addEventListener('click', () => {
+      if(pendingUrl) window.open(pendingUrl, '_blank', 'noopener');
+      closeConfirm();
+    });
+
+    function showToast(message){
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        showToast('copied to clipboard');
+      } catch(err){
+        showToast('could not copy — try manually');
+      }
+    }
+
+    CONFIG.LINKS.forEach((link, i) => {
+      const pill = document.createElement('button');
+      pill.className = 'link-pill';
+      pill.type = 'button';
+      pill.style.animationDelay = `${0.6 + i * 0.08}s`;
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'link-icon fallback';
+      iconWrap.textContent = (link.label.trim()[0] || '?').toUpperCase();
+
+      if(link.icon){
+        const img = new Image();
+        img.onload = () => {
+          const finalImg = document.createElement('img');
+          finalImg.className = 'link-icon';
+          finalImg.src = link.icon;
+          finalImg.alt = link.label;
+          pill.replaceChild(finalImg, iconWrap);
+        };
+        // onerror: file not added to assets/images/links/ yet — keep initial fallback
+        img.src = link.icon;
+      }
+
+      const label = document.createElement('span');
+      label.textContent = link.label;
+
+      pill.appendChild(iconWrap);
+      pill.appendChild(label);
+
+      pill.addEventListener('click', () => {
+        if(link.url){
+          openConfirm(link.url);
+        } else {
+          copyText(link.label);
+        }
+      });
+
+      row.appendChild(pill);
+    });
+  })();
+
+  /* ---------- tab-panel link lists (projects / biolinks / socials) ---------- */
+  (function(){
+    function renderList(panelId, items, wrapInSingleCard){
+      const panel = document.getElementById(panelId);
+      if(!panel || !items || !items.length) return;
+
+      if(wrapInSingleCard){
+        // one glass card, items stacked as rows inside it (biolinks/socials style)
+        const card = document.createElement('div');
+        card.className = 'card list-card row';
+        card.style.animationDelay = '.03s';
+        items.forEach(item => {
+          const a = document.createElement('a');
+          a.className = 'item';
+          a.href = item.url || '#';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.innerHTML = `
+            <span class="item-text">
+              <span class="item-title">${item.title}</span>
+              <span class="item-sub">${item.sub}</span>
+            </span>
+            <span class="item-arrow" aria-hidden="true">↗</span>
+          `;
+          card.appendChild(a);
+        });
+        panel.appendChild(card);
+      } else {
+        // each item is its own glass card (projects style)
+        items.forEach((item, i) => {
+          const a = document.createElement('a');
+          a.className = 'card list-card row';
+          a.href = item.url || '#';
+          a.target = '_blank';
+          a.rel = 'noopener';
+          a.style.animationDelay = `${0.03 + i * 0.06}s`;
+          a.innerHTML = `
+            <span class="item" style="border:none;">
+              <span class="item-text">
+                <span class="item-title">${item.title}</span>
+                <span class="item-sub">${item.sub}</span>
+              </span>
+              <span class="item-arrow" aria-hidden="true">↗</span>
+            </span>
+          `;
+          panel.appendChild(a);
+        });
+      }
+    }
+
+    renderList('projects-panel', CONFIG.PROJECTS, false);
+    renderList('biolinks-panel', CONFIG.BIOLINKS, true);
+    renderList('socials-panel', CONFIG.SOCIALS, true);
+  })();
+
+  /* ---------- visitor counter ---------- */
+  (function(){
+    const el = document.getElementById('counter');
+    const target = 4271;
+    const duration = 900;
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now - start) / duration);
+      el.textContent = String(Math.floor(p * target)).padStart(6, '0');
+      if(p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  /* ---------- tab switching ---------- */
+  (function(){
+    const tabs = document.querySelectorAll('#tabs button');
+    const panels = document.querySelectorAll('.panel');
+    function activate(name){
+      tabs.forEach(t => t.setAttribute('aria-current', t.dataset.tab === name ? 'true' : 'false'));
+      panels.forEach(p => {
+        if(p.dataset.panel === name){
+          p.hidden = false;
+          p.classList.remove('enter');
+          void p.offsetWidth;
+          p.classList.add('enter');
+          p.querySelectorAll('.row').forEach(row => {
+            row.style.animation = 'none';
+            void row.offsetWidth;
+            row.style.animation = '';
+          });
+        } else {
+          p.hidden = true;
+        }
+      });
+    }
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+  })();
+
+  /* ---------- gate / click to enter ---------- */
+  (function(){
+    const gate = document.getElementById('gate');
+    const shell = document.getElementById('shell');
+    const audio = document.getElementById('bg-audio');
+
+    function enter(){
+      gate.classList.add('hidden');
+      shell.classList.add('revealed');
+      document.body.style.overflow = '';
+      if(CONFIG.AUDIO_SRC){
+        audio.src = CONFIG.AUDIO_SRC;
+        audio.volume = CONFIG.AUDIO_DEFAULT_VOLUME;
+        audio.play().catch(() => {});
+      }
+      gate.removeEventListener('click', enter);
+    }
+
+    document.body.style.overflow = 'hidden';
+    gate.addEventListener('click', enter);
+    gate.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); enter(); }
+    });
+  })();
+
+  /* ---------- volume control ---------- */
+  (function(){
+    const audio = document.getElementById('bg-audio');
+    const btn = document.getElementById('vol-btn');
+    const icon = document.getElementById('vol-icon');
+    const slider = document.getElementById('vol-slider');
+    slider.value = Math.round(CONFIG.AUDIO_DEFAULT_VOLUME * 100);
+
+    const iconOn = '<path d="M3 9v6h4l5 5V4L7 9H3z"/><path d="M16.5 12c0-1.77-.77-3.29-2-4.24v8.48c1.23-.95 2-2.47 2-4.24z"/><path d="M19 12c0-3.27-1.83-6.07-4.5-7.5v15c2.67-1.43 4.5-4.23 4.5-7.5z" opacity="0.6"/>';
+    const iconOff = '<path d="M3 9v6h4l5 5V4L7 9H3z"/><path d="M19 8l-4 4m0-4l4 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>';
+
+    let lastVolume = CONFIG.AUDIO_DEFAULT_VOLUME;
+
+    function applyVolume(v){
+      audio.volume = v;
+      icon.innerHTML = v === 0 ? iconOff : iconOn;
+      btn.setAttribute('aria-label', v === 0 ? 'unmute' : 'mute');
+    }
+
+    slider.addEventListener('input', () => {
+      const v = Number(slider.value) / 100;
+      lastVolume = v || lastVolume;
+      applyVolume(v);
+    });
+
+    btn.addEventListener('click', () => {
+      if(audio.volume > 0){
+        lastVolume = audio.volume;
+        slider.value = 0;
+        applyVolume(0);
+      } else {
+        slider.value = Math.round(lastVolume * 100);
+        applyVolume(lastVolume);
+      }
+    });
+
+    applyVolume(CONFIG.AUDIO_DEFAULT_VOLUME);
+  })();
+
+  /* ---------- live discord card (Lanyard) ---------- */
+  (function(){
+    const card = document.getElementById('discord-card');
+    if(!CONFIG.DISCORD_USER_ID) return;
+
+    const STATUS_COLORS = { online:'#3ba55c', idle:'#faa61a', dnd:'#ed4245', offline:'#747f8d' };
+    const STATUS_LABELS = { online:'Online', idle:'Idle', dnd:'Do Not Disturb', offline:'Offline' };
+
+    const BADGE_FLAGS = [
+      [1 << 0,  'Staff'],
+      [1 << 1,  'Partner'],
+      [1 << 2,  'HypeSquad Events'],
+      [1 << 3,  'Bug Hunter'],
+      [1 << 6,  'House Bravery'],
+      [1 << 7,  'House Brilliance'],
+      [1 << 8,  'House Balance'],
+      [1 << 9,  'Early Supporter'],
+      [1 << 14, 'Bug Hunter II'],
+      [1 << 17, 'Early Verified Bot Dev'],
+      [1 << 18, 'Moderator Programs Alumni'],
+      [1 << 22, 'Active Developer'],
+    ];
+
+    function badgesFromFlags(flags){
+      return BADGE_FLAGS.filter(([bit]) => (flags & bit) === bit).map(([, label]) => label);
+    }
+
+    function avatarUrl(user){
+      if(user.avatar){
+        const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
+        return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${ext}?size=128`;
+      }
+      const fallbackIndex = user.discriminator && user.discriminator !== '0'
+        ? Number(user.discriminator) % 5
+        : Number(BigInt(user.id) >> 22n) % 6;
+      return `https://cdn.discordapp.com/embed/avatars/${fallbackIndex}.png`;
+    }
+
+    function render(data){
+      const user = data.discord_user;
+      const status = data.discord_status || 'offline';
+      const badges = badgesFromFlags(user.public_flags || 0);
+      const displayName = user.global_name || user.username;
+      const tag = user.discriminator && user.discriminator !== '0' ? `#${user.discriminator}` : `@${user.username}`;
+
+      card.innerHTML = `
+        <div class="d-avatar">
+          <img src="${avatarUrl(user)}" alt="${displayName}">
+          <span class="d-status-dot" style="background:${STATUS_COLORS[status] || STATUS_COLORS.offline}"></span>
+        </div>
+        <div class="d-info">
+          <div class="d-name-row">
+            <span class="d-username">${displayName}</span>
+            <span class="d-tag">${tag}</span>
+          </div>
+          <div class="d-status-text">${STATUS_LABELS[status] || status}</div>
+          ${badges.length ? `<div class="d-badges">${badges.map(b => `<span class="d-badge">${b}</span>`).join('')}</div>` : ''}
+        </div>
+      `;
+    }
+
+    async function fetchPresence(){
+      try{
+        const res = await fetch(`https://api.lanyard.rest/v1/users/${CONFIG.DISCORD_USER_ID}`);
+        const json = await res.json();
+        if(json.success){
+          render(json.data);
+        } else {
+          card.innerHTML = '<div class="d-empty">could not load Discord presence — make sure the user ID is correct and the account has joined the Lanyard Discord server.</div>';
+        }
+      } catch(err){
+        card.innerHTML = '<div class="d-empty">could not reach the presence service right now.</div>';
+      }
+    }
+
+    fetchPresence();
+    setInterval(fetchPresence, 20000); // poll every 20s for a near-real-time feel
+  })();
+</script>
+
+</body>
+</html>
