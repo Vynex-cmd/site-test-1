@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Where Light Rests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ivory:#FAFAF6;
+    --cloud:#EDEAE3;
+    --pearl:#F1E7E2;
+    --mist:#E7EDF1;
+    --gold:#B99B6B;
+    --ink:#2E2C29;
+    --ink-soft:#5A564F;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--ivory);
+    color:var(--ink);
+    font-family:'EB Garamond', serif;
+    overflow-x:hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+  }
+
+  a{color:inherit;}
+
+  /* ---------- Feather signature element ---------- */
+  #feather-layer{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:5;
+  }
+
+  .feather{
+    position:absolute;
+    top:-60px;
+    width:26px;
+    height:60px;
+    opacity:0.55;
+    filter:drop-shadow(0 6px 10px rgba(180,160,120,0.15));
+    animation-name:drift;
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+  }
+
+  @keyframes drift{
+    0%{ transform: translateY(-10vh) translateX(0) rotate(8deg); }
+    50%{ transform: translateY(55vh) translateX(30px) rotate(-6deg); }
+    100%{ transform: translateY(115vh) translateX(-10px) rotate(10deg); }
+  }
+
+  /* ---------- Sections ---------- */
+  section{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8vh 8vw;
+  }
+
+  /* Hero */
+  #hero{
+    background:
+      radial-gradient(ellipse 60% 45% at 50% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 90% 60% at 50% 100%, var(--mist), var(--ivory) 60%);
+    text-align:center;
+    flex-direction:column;
+    gap:1.6rem;
+  }
+
+  .eyebrow{
+    font-family:'EB Garamond', serif;
+    font-style:italic;
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    font-size:0.72rem;
+    color:var(--gold);
+    opacity:0.9;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:300;
+    font-style:italic;
+    font-size:clamp(2.6rem, 7vw, 5.2rem);
+    line-height:1.05;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    max-width:16ch;
+  }
+
+  .hero-sub{
+    font-size:1.05rem;
+    color:var(--ink-soft);
+    max-width:34ch;
+    line-height:1.7;
+    font-weight:400;
+  }
+
+  .halo{
+    width:min(60vw, 380px);
+    height:min(60vw, 380px);
+    border-radius:50%;
+    position:absolute;
+    top:8%;
+    left:50%;
+    transform:translateX(-50%);
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.0) 55%, rgba(255,255,255,0.55) 60%, rgba(255,255,255,0.0) 62%),
+      radial-gradient(circle, rgba(233,214,169,0.12), rgba(233,214,169,0) 70%);
+    animation:breathe 7s ease-in-out infinite;
+    z-index:0;
+  }
+
+  @keyframes breathe{
+    0%,100%{ opacity:0.5; transform:translateX(-50%) scale(1); }
+    50%{ opacity:0.9; transform:translateX(-50%) scale(1.04); }
+  }
+
+  .hero-inner{ position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:1.6rem; }
+
+  .scroll-cue{
+    position:absolute;
+    bottom:6vh;
+    left:50%;
+    transform:translateX(-50%);
+    width:1px;
+    height:52px;
+    background:linear-gradient(to bottom, rgba(46,44,41,0.4), transparent);
+    animation:cue 2.4s ease-in-out infinite;
+  }
+  @keyframes cue{
+    0%,100%{ opacity:0.25; }
+    50%{ opacity:0.9; }
+  }
+
+  /* Verses */
+  #verses{
+    background:var(--cloud);
+    flex-direction:column;
+    gap:4.5rem;
+    text-align:center;
+  }
+
+  .verse{
+    max-width:38ch;
+    opacity:0;
+    transform:translateY(18px);
+    transition:opacity 1s ease, transform 1s ease;
+  }
+
+  .verse.visible{ opacity:1; transform:translateY(0); }
+
+  .verse p{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:300;
+    font-size:clamp(1.3rem, 2.6vw, 1.9rem);
+    line-height:1.6;
+    color:var(--ink);
+  }
+
+  .verse span{
+    display:block;
+    margin-top:0.9rem;
+    font-family:'EB Garamond', serif;
+    font-size:0.75rem;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+
+  /* Rings / gallery of light */
+  #rings{
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 50%, var(--pearl), var(--ivory) 75%);
+    flex-direction:column;
+    gap:3rem;
+    text-align:center;
+  }
+
+  .ring-field{
+    position:relative;
+    width:min(70vw, 420px);
+    height:min(70vw, 420px);
+  }
+
+  .ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:1px solid rgba(185,155,107,0.35);
+  }
+  .ring:nth-child(1){ inset:0; animation:spin 40s linear infinite; }
+  .ring:nth-child(2){ inset:12%; border-color:rgba(185,155,107,0.22); animation:spin 55s linear infinite reverse; }
+  .ring:nth-child(3){ inset:24%; border-color:rgba(185,155,107,0.15); animation:spin 70s linear infinite; }
+
+  @keyframes spin{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
+
+  .ring-center{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 24px 6px rgba(185,155,107,0.35);
+  }
+
+  #rings h2{
+    font-family:'Fraunces', serif;
+    font-weight:300;
+    font-style:italic;
+    font-size:clamp(1.6rem, 3.4vw, 2.4rem);
+    max-width:24ch;
+  }
+
+  /* Closing */
+  #close{
+    background:var(--ivory);
+    flex-direction:column;
+    gap:1.4rem;
+    text-align:center;
+  }
+
+  #close .mark{
+    font-size:0.7rem;
+    letter-spacing:0.35em;
+    text-transform:uppercase;
+    color:var(--gold);
+  }
+
+  #close p{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:300;
+    font-size:clamp(1.4rem, 3vw, 2rem);
+    max-width:22ch;
+    color:var(--ink);
+    line-height:1.5;
+  }
+
+  #close small{
+    margin-top:1rem;
+    font-size:0.7rem;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    opacity:0.6;
+  }
+</style>
+</head>
+<body>
+
+<div id="feather-layer"></div>
+
+<section id="hero">
+  <div class="halo"></div>
+  <div class="hero-inner">
+    <span class="eyebrow">A Quiet Ascension</span>
+    <h1>Where Light Rests</h1>
+    <p class="hero-sub">Stillness has a shape. Scroll to find it.</p>
+  </div>
+  <div class="scroll-cue"></div>
+</section>
+
+<section id="verses">
+  <div class="verse">
+    <p>Grace does not arrive loudly.<br>It settles, like dust in a sunbeam,<br>already home.</p>
+    <span>I</span>
+  </div>
+  <div class="verse">
+    <p>Every falling feather<br>knew, once, how to fly —<br>and chose to rest instead.</p>
+    <span>II</span>
+  </div>
+  <div class="verse">
+    <p>What is holy is not distant.<br>It is only quiet<br>enough to hear.</p>
+    <span>III</span>
+  </div>
+</section>
+
+<section id="rings">
+  <div class="ring-field">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring-center"></div>
+  </div>
+  <h2>Concentric, patient, unhurried — the way light moves when no one is watching.</h2>
+</section>
+
+<section id="close">
+  <span class="mark">Amen, Softly</span>
+  <p>Carry this stillness back down with you.</p>
+  <small>Where Light Rests</small>
+</section>
+
+<script>
+  // Drift a handful of feathers across the whole page at staggered times/positions
+  const layer = document.getElementById('feather-layer');
+  const featherSVG = `
+    <svg viewBox="0 0 26 60" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 0 C 20 12, 24 28, 13 60 C 2 28, 6 12, 13 0 Z" fill="#F7F3EC" stroke="#D8CBB4" stroke-width="0.6"/>
+      <line x1="13" y1="2" x2="13" y2="58" stroke="#D8CBB4" stroke-width="0.5" opacity="0.7"/>
+    </svg>`;
+
+  const featherCount = 5;
+  for (let i = 0; i < featherCount; i++) {
+    const f = document.createElement('div');
+    f.className = 'feather';
+    f.style.left = (8 + Math.random() * 84) + 'vw';
+    f.style.animationDuration = (18 + Math.random() * 14) + 's';
+    f.style.animationDelay = (-Math.random() * 30) + 's';
+    f.innerHTML = featherSVG;
+    layer.appendChild(f);
+  }
+
+  // Reveal verses on scroll
+  const verses = document.querySelectorAll('.verse');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.4 });
+  verses.forEach(v => io.observe(v));
+</script>
+
+</body>
+</html>
